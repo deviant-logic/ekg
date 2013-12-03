@@ -76,7 +76,7 @@ type Labels = M.HashMap T.Text Label
 -- | A handle that can be used to control the monitoring server.
 -- Created by 'forkServer'.
 data Server = Server {
-      threadId :: {-# UNPACK #-} !ThreadId
+      threadId :: !(Maybe ThreadId)
     , userCounters :: !(IORef Counters)
     , userGauges :: !(IORef Gauges)
     , userLabels :: !(IORef Labels)

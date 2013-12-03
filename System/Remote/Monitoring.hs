@@ -32,6 +32,7 @@ module System.Remote.Monitoring
       Server
     , serverThreadId
     , forkServer
+    , don'tForkServer
 
       -- * User-defined counters, gauges, and labels
       -- $userdefined
@@ -203,7 +204,7 @@ import System.Remote.Snap
 
 -- | The thread ID of the server.  You can kill the server by killing
 -- this thread (i.e. by throwing it an asynchronous exception.)
-serverThreadId :: Server -> ThreadId
+serverThreadId :: Server -> Maybe ThreadId
 serverThreadId = threadId
 
 -- | Start an HTTP server in a new thread.  The server replies to GET
@@ -218,8 +219,14 @@ forkServer :: S.ByteString  -- ^ Host to listen on (e.g. \"localhost\")
            -> Int           -- ^ Port to listen on (e.g. 8000)
            -> IO Server
 forkServer host port = do
+    Server Nothing counters gauges labels <- don'tForkServer
+    tid <- forkIO $ startServer counters gauges labels host port
+    return $! Server (Just tid) counters gauges labels
+
+-- | Make a 'Server' without actually running a server.
+don'tForkServer :: IO Server
+don'tForkServer = do
     counters <- newIORef M.empty
     gauges <- newIORef M.empty
     labels <- newIORef M.empty
-    tid <- forkIO $ startServer counters gauges labels host port
-    return $! Server tid counters gauges labels
+    return $! Server Nothing counters gauges labels
